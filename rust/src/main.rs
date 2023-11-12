@@ -61,6 +61,7 @@ fn main() {
     let result = match year{
         2015 => match day {
             1 => sol::y2k15::day1(&input),
+            2 => sol::y2k15::day2(&input),
             _ => {
                 println!("I haven't solved that day yet");
                 std::process::exit(1);
