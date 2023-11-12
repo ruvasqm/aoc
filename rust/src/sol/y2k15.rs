@@ -58,20 +58,26 @@ mod tests {
 }
 
 pub fn day2(input: &str) -> Result<String, &str> {
+    let mut total_ribbon: u32 = 0;
     let total_paper: u32 = input.lines().fold(0, |acc, x| {
-        let mut dims: Vec<u32> = x.split('x').map(|x| match x.parse::<u32>() {
-            Ok(x) => x,
-            Err(_) => 0,
-        }).collect();
+        let mut dims: Vec<u32> = x
+            .split('x')
+            .map(|x| match x.parse::<u32>() {
+                Ok(x) => x,
+                Err(_) => 0,
+            })
+            .collect();
         dims.sort();
-        let faces = [dims[0] * dims[1], dims[1] * dims[2], dims[2] * dims[0]];
-        acc + 2 * faces.iter().sum::<u32>() + match faces.iter().min() {
-            Some(x) => x,
-            None => &0,
-        }
+        total_ribbon += 2 * (dims[0] + dims[1]) + dims[0] * dims[1] * dims[2];
+        acc + 2 * (dims[0] * dims[1] + dims[1] * dims[2] + dims[2] * dims[0]) + dims[0] * dims[1]
     });
     let total_paper = total_paper.to_string();
-    Ok(total_paper)
+    let total_ribbon = total_ribbon.to_string();
+    let answer = format!(
+        "total paper: {}\ntotal ribbon: {}",
+        total_paper, total_ribbon
+    );
+    Ok(answer)
 }
 
 #[cfg(test)]
@@ -80,9 +86,112 @@ mod tests2 {
 
     #[test]
     fn test_day2() {
-        assert_eq!(day2("2x3x4"), Ok("58".to_string()));
-        assert_eq!(day2("1x1x10"), Ok("43".to_string()));
-        assert_eq!(day2("2x3x4\n1x1x10"), Ok("101".to_string()));
-        assert_eq!(day2("2x3x4\n1x1x10\n2x3x4"), Ok("159".to_string()));
+        assert_eq!(
+            day2("2x3x4"),
+            Ok("total paper: 58\ntotal ribbon: 34".to_string())
+        );
+        assert_eq!(
+            day2("1x1x10"),
+            Ok("total paper: 43\ntotal ribbon: 14".to_string())
+        );
+        assert_eq!(
+            day2("2x3x4\n1x1x10"),
+            Ok("total paper: 101\ntotal ribbon: 48".to_string())
+        );
+        assert_eq!(
+            day2("2x3x4\n1x1x10\n2x3x4\n1x1x10"),
+            Ok("total paper: 202\ntotal ribbon: 96".to_string())
+        );
+    }
+}
+
+pub fn day3(input: &str) -> Result<String, &str> {
+    let mut houses: std::collections::HashMap<(i32, i32), u32> =
+        std::collections::HashMap::new();
+    let mut santa = (0, 0);
+    houses.insert(santa, 1);
+    let presents = input.chars().fold(1, |acc, x| {
+        santa = match x {
+            '^' => (santa.0, santa.1 + 1),
+            'v' => (santa.0, santa.1 - 1),
+            '>' => (santa.0 + 1, santa.1),
+            '<' => (santa.0 - 1, santa.1),
+            _ => santa,
+        };
+        if houses.contains_key(&santa) {
+            houses.insert(santa, houses[&santa] + 1);
+        } else {
+            houses.insert(santa, 1);
+        }
+        acc + 1
+    });
+
+    let mut next_houses: std::collections::HashMap<(i32, i32), u32> =
+        std::collections::HashMap::new();
+    let mut next_santa = (0, 0);
+    let mut robo_santa = (0, 0);
+    next_houses.insert(next_santa, 2);// robo is here too
+    let next_presents = input.chars().enumerate().fold(2, |acc, (i, x)| {
+        if i % 2 == 0 {
+            next_santa = match x {
+                '^' => (next_santa.0, next_santa.1 + 1),
+                'v' => (next_santa.0, next_santa.1 - 1),
+                '>' => (next_santa.0 + 1, next_santa.1),
+                '<' => (next_santa.0 - 1, next_santa.1),
+                _ => next_santa,
+            };
+            if next_houses.contains_key(&next_santa) {
+                next_houses.insert(next_santa, next_houses[&next_santa] + 1);
+            } else {
+                next_houses.insert(next_santa, 1);
+            }
+        } else {
+            robo_santa = match x {
+                '^' => (robo_santa.0, robo_santa.1 + 1),
+                'v' => (robo_santa.0, robo_santa.1 - 1),
+                '>' => (robo_santa.0 + 1, robo_santa.1),
+                '<' => (robo_santa.0 - 1, robo_santa.1),
+                _ => robo_santa,
+            };
+            if next_houses.contains_key(&robo_santa) {
+                next_houses.insert(robo_santa, next_houses[&robo_santa] + 1);
+            } else {
+                next_houses.insert(robo_santa, 1);
+            }
+        }
+        acc + 1
+    });
+    let answer = format!(
+        "This year Santa visited {} houses and delivered {} presents.\n\
+        Next year Santa and Robo-Santa visited {} houses and delivered {} presents.",
+        houses.len(),
+        presents,
+        next_houses.len(),
+        next_presents
+    );
+    Ok(answer)
+}
+
+#[cfg(test)]
+mod tests3 {
+    use super::*;
+
+    #[test]
+    fn test_day3() {
+        assert_eq!(
+            day3("^v"),
+            Ok("This year Santa visited 2 houses and delivered 3 presents.\n\
+                Next year Santa and Robo-Santa visited 3 houses and delivered 4 presents.".to_string())
+        );
+        assert_eq!(
+            day3("^>v<"),
+            Ok("This year Santa visited 4 houses and delivered 5 presents.\n\
+                Next year Santa and Robo-Santa visited 3 houses and delivered 6 presents.".to_string())
+        );
+        assert_eq!(
+            day3("^v^v^v^v^v"),
+            Ok("This year Santa visited 2 houses and delivered 11 presents.\n\
+                Next year Santa and Robo-Santa visited 11 houses and delivered 12 presents.".to_string())
+        );
     }
 }
