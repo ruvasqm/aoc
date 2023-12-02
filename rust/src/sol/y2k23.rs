@@ -1,7 +1,9 @@
 pub fn day1(input: &str) -> Result<String, &str> {
     let mut result: Vec<u32> = Vec::new();
     let mut result2: Vec<u32> = Vec::new();
-    let re = regex::Regex::new(r"((one)|(two)|(three)|(four)|(five)|(six)|(seven)|(eight)|(nine)|(\d))").unwrap();
+    let re =
+        regex::Regex::new(r"((one)|(two)|(three)|(four)|(five)|(six)|(seven)|(eight)|(nine)|(\d))")
+            .unwrap();
     for line in input.lines() {
         // traverse the line simultaneously front and back
         let mut front = 0;
@@ -47,9 +49,8 @@ pub fn day1(input: &str) -> Result<String, &str> {
                         "nine" => Some('9'),
                         n => Some(n.chars().nth(0).unwrap()),
                     };
-                   // dbg!(last_digit2);
+                    // dbg!(last_digit2);
                 }
-
             }
             if last_digit.is_none() {
                 if back_char.is_digit(10) {
@@ -82,13 +83,49 @@ pub fn day1(input: &str) -> Result<String, &str> {
         }
         //dbg!(format!("{} {}", first_digit.unwrap_or(' '), last_digit.unwrap_or(' ')));
         match (first_digit, last_digit) {
-            (Some(_), Some(_)) => result.push(format!("{}{}", first_digit.unwrap(), last_digit.unwrap()).parse::<u32>().unwrap()),
-            (Some(_), None) => result.push(format!("{}{}", first_digit.unwrap(), line.chars().nth(back).unwrap()).parse::<u32>().unwrap()),
-            (None, Some(_)) => result.push(format!("{}{}", last_digit.unwrap(), line.chars().nth(front).unwrap()).parse::<u32>().unwrap()),
-            (None, None) => result.push((line.chars().nth(front).unwrap().to_digit(10).unwrap() as u32) * 11),
+            (Some(_), Some(_)) => result.push(
+                format!("{}{}", first_digit.unwrap(), last_digit.unwrap())
+                    .parse::<u32>()
+                    .unwrap(),
+            ),
+            (Some(_), None) => result.push(
+                format!(
+                    "{}{}",
+                    first_digit.unwrap(),
+                    line.chars().nth(back).unwrap()
+                )
+                .parse::<u32>()
+                .unwrap(),
+            ),
+            (None, Some(_)) => result.push(
+                format!(
+                    "{}{}",
+                    last_digit.unwrap(),
+                    line.chars().nth(front).unwrap()
+                )
+                .parse::<u32>()
+                .unwrap(),
+            ),
+            (None, None) => result.push(
+                (line.chars().nth(front).unwrap().to_digit(10).unwrap() as u32)
+                    * 11,
+            ),
         }
-        dbg!(format!("{}: {} {}",line, first_digit2.unwrap_or(' '), last_digit2.unwrap_or(' ')));
-        result2.push(format!("{}{}", first_digit2.unwrap_or(' '), last_digit2.unwrap_or(' ')).parse::<u32>().unwrap());
+        dbg!(format!(
+            "{}: {} {}",
+            line,
+            first_digit2.unwrap_or(' '),
+            last_digit2.unwrap_or(' ')
+        ));
+        result2.push(
+            format!(
+                "{}{}",
+                first_digit2.unwrap_or(' '),
+                last_digit2.unwrap_or(' ')
+            )
+            .parse::<u32>()
+            .unwrap(),
+        );
     }
     // dbg!(&result);
     //dbg!(&result2);
@@ -128,5 +165,74 @@ mod tests {
                      zoneight234\n\
                      7pqrstsixteen";
         assert_eq!(day1(input), Ok("part 1: 220\npart 2: 281".to_string()));
+    }
+}
+
+pub fn day2(input: &str) -> Result<String, &str> {
+    let constraints = std::collections::HashMap::from([
+        ("red", 12),
+        ("green", 13),
+        ("blue", 14),
+    ]);
+    let mut power_sum = 0;
+    let result = input.lines().fold(0, |acc, line| {
+        let line_parts = line.split(":").collect::<Vec<&str>>();
+        let draws = line_parts[1].trim().split(";");
+        let game = line_parts[0].trim().split(" ").collect::<Vec<&str>>()[1]
+            .parse::<u32>()
+            .unwrap();
+        let mut is_valid_game = true;
+        let mut min_rgb = std::collections::HashMap::from([
+            ("red", 0),
+            ("green", 0),
+            ("blue", 0),
+        ]);
+        for draw in draws {
+            let balls = draw.trim().split(",").collect::<Vec<&str>>();
+            min_rgb = balls.iter().fold(min_rgb, |mut acc, ball| {
+                let ball_parts = ball.trim().split(" ").collect::<Vec<&str>>();
+                let color = ball_parts[1];
+                let number = ball_parts[0].parse::<u32>().unwrap();
+                acc.insert(
+                    color,
+                    std::cmp::max(*acc.get(color).unwrap(), number),
+                );
+                acc
+            });
+            let is_possible = balls.iter().all(|ball| {
+                dbg!(ball);
+                let ball_parts = ball.trim().split(" ").collect::<Vec<&str>>();
+                let color = ball_parts[1];
+                let number = ball_parts[0].parse::<u32>().unwrap();
+                dbg!(color, number);
+                dbg!(constraints.get(color).unwrap() >= &number);
+                constraints.get(color).unwrap() >= &number
+            });
+            if !is_possible {
+                is_valid_game = false;
+            }
+        }
+        power_sum += min_rgb.values().fold(1, |acc, x| acc * x);
+        if is_valid_game {
+            acc + game
+        } else {
+            acc
+        }
+    });
+    Ok(format!("part 1: {}\npart 2: {}", result, power_sum))
+}
+
+#[cfg(test)]
+mod tests2 {
+    use super::*;
+
+    #[test]
+    fn test_day2() {
+        let input = "Game 1: 3 blue, 4 red; 1 red, 2 green, 6 blue; 2 green\n\
+Game 2: 1 blue, 2 green; 3 green, 4 blue, 1 red; 1 green, 1 blue\n\
+Game 3: 8 green, 6 blue, 20 red; 5 blue, 4 red, 13 green; 5 green, 1 red\n\
+Game 4: 1 green, 3 red, 6 blue; 3 green, 6 red; 3 green, 15 blue, 14 red\n\
+Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
+        assert_eq!(day2(input), Ok("part 1: 8\npart 2: 2286".to_string()));
     }
 }

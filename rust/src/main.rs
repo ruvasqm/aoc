@@ -70,7 +70,7 @@ fn main() {
         },
         2023 => match day {
             1 => sol::y2k23::day1(&input),
-            //2 => sol::y2k23::day2(&input),
+            2 => sol::y2k23::day2(&input),
             //3 => sol::y2k23::day3(&input),
             _ => {
                 println!("I haven't solved that day yet");
