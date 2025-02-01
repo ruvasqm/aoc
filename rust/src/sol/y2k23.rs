@@ -236,3 +236,29 @@ Game 5: 6 red, 1 blue, 3 green; 2 blue, 1 red, 2 green";
         assert_eq!(day2(input), Ok("part 1: 8\npart 2: 2286".to_string()));
     }
 }
+
+
+pub fn day3(input: &str) -> Result<String, &str> {
+    let line_length = input.lines().nth(0).unwrap().len();
+    dbg!(input.lines().nth(0).unwrap()[23..].parse::<u16>().unwrap());
+    let finder = regex::Regex::new(r"(\d{1,3})|([[:punct:]--[.]])").unwrap();
+    let mut prev_line: Option<regex::Match> = None;
+
+    let result = input.lines().fold(0, |acc, line| {
+        let current_line: std::collections::HashMap<regex::Match, bool> =
+            std::collections::HashMap::new();
+        finder
+            .find_iter(line)
+            .for_each(|x| {
+                current_line.insert(
+                    x,
+                    finder.find_iter(line).any(|y| {
+                        y.end() == x.start() - 1 || y.start() == x.end() + 1
+                    }),
+                )
+            });
+        acc
+    });
+
+    Ok("part 1: 0\npart 2: 0".to_string())
+}
